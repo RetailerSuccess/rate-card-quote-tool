@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rate Card Quote Tool</title>
+  <meta name="description" content="Rate Card Quote Tool: quote a Boost Mobile account with up to 7 lines, AutoPay, add-ons, connected devices and add-a-line charges." />
+  <style>
+    :root {
+      --boost-orange: #f76500;
+      --boost-orange-dark: #b84a00;
+      --boost-dark: #121212;
+      --boost-gray-bg: #f5f6f8;
+      --boost-card-border: #e2e8f0;
+      --boost-text-muted: #64748b;
+      --boost-text-dark: #1e293b;
+      --boost-green: #047857;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body { background-color: var(--boost-gray-bg); color: var(--boost-text-dark); padding: 24px 16px; }
+    .container { max-width: 1080px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 24px; }
+    h1 { color: var(--boost-dark); font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+    h1 span { color: var(--boost-orange); }
+    h2 { font-size: inherit; }
+
+    .autopay-banner {
+      display: inline-block;
+      margin-top: 10px;
+      background-color: #fff4ec;
+      color: var(--boost-orange-dark);
+      border: 1px solid #ffd8bf;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    .autopay-banner.off { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+    .calculator-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+    @media (min-width: 880px) {
+      .calculator-grid { grid-template-columns: 1.4fr 1fr; align-items: start; }
+    }
+
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--boost-card-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hint { font-size: 0.8rem; color: var(--boost-text-muted); line-height: 1.4; }
+
+    /* Quote type + AutoPay */
+    .segmented {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 4px;
+      gap: 4px;
+    }
+    .segmented button {
+      border: none;
+      background: transparent;
+      padding: 10px 8px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #475569;
+      cursor: pointer;
+    }
+    .segmented button[aria-checked="true"] { background: #ffffff; color: var(--boost-orange-dark); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+    @media (max-width: 520px) { .field-grid { grid-template-columns: 1fr; } }
+    .field-grid label { font-size: 0.82rem; font-weight: 600; display: flex; flex-direction: column; gap: 6px; }
+
+    input[type="date"], input[type="number"], input[type="text"] {
+      padding: 9px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.92rem;
+      background: #fff;
+      width: 100%;
+    }
+
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #f1f5f9;
+    }
+    .switch-row strong { font-size: 0.95rem; }
+    .switch { position: relative; width: 48px; height: 26px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .switch .slider {
+      position: absolute; inset: 0;
+      background: #cbd5e1;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .switch .slider::before {
+      content: "";
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: #fff;
+      border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--boost-orange); }
+    .switch input:checked + .slider::before { transform: translateX(22px); }
+    .switch input:focus-visible + .slider { outline: 2px solid var(--boost-orange); outline-offset: 2px; }
+
+    /* Lines List */
+    .line-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .line-row.is-new { border-color: #ffc9a3; background: #fffaf6; }
+
+    .line-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .line-header-right { display: flex; align-items: center; gap: 10px; }
+    .line-label { font-weight: 700; font-size: 0.95rem; }
+
+    .btn-delete {
+      background: none;
+      border: none;
+      color: #dc2626;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-delete:hover { text-decoration: underline; }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+    }
+    select.mini-select { width: auto; padding: 6px 8px; font-size: 0.82rem; }
+
+    select:focus-visible, button:focus-visible, input:focus-visible {
+      outline: 2px solid var(--boost-orange);
+      outline-offset: 2px;
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip {
+      font-size: 0.74rem;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #fff;
+      color: #334155;
+      line-height: 1.3;
+    }
+    .chip.yes { border-color: #a7f3d0; background: #ecfdf5; color: var(--boost-green); }
+    .chip.no { color: #64748b; background: #f8fafc; }
+    .chip.device { border-color: #c7d2fe; background: #eef2ff; color: #3730a3; }
+    .chip.multi { border-color: #fed7aa; background: #fff7ed; color: var(--boost-orange-dark); font-weight: 600; }
+
+    .badge-rpd {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+      background: #1e293b;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 4px;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .badge-new {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--boost-orange-dark);
+      background: #ffedd5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    .addon-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-top: 8px;
+      border-top: 1px dashed #e5e7eb;
+      font-size: 0.85rem;
+    }
+    .addon-row label { font-weight: 600; }
+
+    /* Actions */
+    .button-group { display: flex; gap: 10px; margin-top: 10px; }
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background-color: var(--boost-orange); color: #ffffff; }
+    .btn-primary:hover:not(:disabled) { background-color: #df5800; }
+    .btn-primary:disabled { background-color: #fed7aa; cursor: not-allowed; }
+    .btn-secondary { background-color: #f1f5f9; color: #475569; }
+    .btn-secondary:hover { background-color: #e2e8f0; }
+
+    /* Promo toggle */
+    .promo-toggle {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 14px;
+      padding: 12px;
+      background: #fff8f2;
+      border: 1px dashed #ffc9a3;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+    .promo-toggle[hidden] { display: none; }
+    .promo-toggle input { margin-top: 2px; width: 16px; height: 16px; accent-color: var(--boost-orange); flex-shrink: 0; }
+    .promo-toggle small { display: block; color: var(--boost-text-muted); margin-top: 2px; }
+
+    /* Connected Devices Controls */
+    .device-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .device-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .device-info h3 { font-size: 0.95rem; font-weight: 700; }
+    .device-info p { font-size: 0.8rem; color: var(--boost-text-muted); line-height: 1.4; }
+    .device-info .reg-price { text-decoration: line-through; }
+
+    .stepper { display: flex; align-items: center; gap: 8px; }
+    .stepper-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid #cbd5e1;
+      background: white;
+      font-weight: bold;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .stepper-btn:hover:not(:disabled) { background-color: #f8fafc; border-color: var(--boost-orange); }
+    .stepper-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stepper-value { width: 24px; text-align: center; font-weight: 700; }
+
+    .other-addon { display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px; margin-top: 8px; }
+    .other-addon label { font-size: 0.82rem; font-weight: 600; display: flex; flex-direction: column; gap: 6px; }
+
+    /* Summary Card (Sticky) */
+    .summary-card {
+      position: sticky;
+      top: 20px;
+      background: #111111;
+      color: #ffffff;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .summary-header { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 8px; }
+    .big-total { font-size: 2.8rem; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
+    .big-total span { font-size: 1.1rem; font-weight: 400; color: #9ca3af; }
+    .avg-cost { font-size: 0.9rem; color: var(--boost-orange); font-weight: 600; margin-bottom: 2px; }
+    .avg-sub { font-size: 0.78rem; color: #9ca3af; margin-bottom: 16px; }
+
+    .callout {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+    }
+    .callout[hidden] { display: none; }
+    .callout strong.hl { color: var(--boost-orange); font-size: 1.05rem; }
+    .callout .muted { color: #9ca3af; }
+    .callout.autopay-on { border-color: #14532d; }
+    .callout.autopay-on .hl-green { color: #34d399; font-weight: 700; }
+    .callout.autopay-off { border-color: #7f1d1d; }
+    .callout.autopay-off .hl-red { color: #fca5a5; font-weight: 700; }
+    .callout.proration { border-color: #3a2a1f; }
+    .callout .pr-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 6px; }
+    .callout .pr-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .callout .pr-row strong { font-size: 1.15rem; }
+    .callout .pr-row + .pr-note { margin-top: 2px; }
+    .callout .pr-note { font-size: 0.76rem; color: #9ca3af; margin-bottom: 8px; }
+    .callout .pr-row.due { border-top: 1px solid #333; padding-top: 8px; margin-top: 2px; }
+    .callout .pr-row.due strong { color: var(--boost-orange); font-size: 1.3rem; }
+    .callout .pr-warn { color: #fcd34d; font-size: 0.8rem; }
+
+    .summary-details {
+      border-top: 1px solid #262626;
+      border-bottom: 1px solid #262626;
+      padding: 14px 0;
+      margin: 4px 0 16px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .summary-line { display: flex; justify-content: space-between; gap: 12px; }
+    .summary-line[hidden] { display: none; }
+    .summary-line.savings { color: #34d399; font-weight: 600; }
+    .summary-line.total { border-top: 1px solid #262626; padding-top: 9px; font-weight: 800; }
+
+    .disclaimer-box { font-size: 0.75rem; color: #9ca3af; line-height: 1.4; }
+
+    /* Plan Details Accordion / Guide */
+    details {
+      background: white;
+      border-radius: 8px;
+      border: 1px solid var(--boost-card-border);
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 0.85rem;
+    }
+    summary { font-weight: 700; cursor: pointer; color: var(--boost-orange-dark); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.8rem; }
+    th, td { border: 1px solid #e2e8f0; padding: 6px 10px; text-align: left; vertical-align: top; }
+    th { background: #f8fafc; }
+    tbody th { font-weight: 600; white-space: nowrap; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>Rate Card <span>Quote Tool</span></h1>
+      <div class="autopay-banner" id="autopayBanner">Prices shown with AutoPay</div>
+    </header>
+
+    <div class="calculator-grid">
+      <!-- LEFT COLUMN -->
+      <div class="config-col">
+
+        <!-- Quote Type & AutoPay -->
+        <section class="card" aria-labelledby="quoteHeading">
+          <div class="card-title"><h2 id="quoteHeading">Quote Type</h2></div>
+
+          <div class="segmented" role="radiogroup" aria-label="Quote type">
+            <button type="button" role="radio" id="modeNew" aria-checked="true">New account</button>
+            <button type="button" role="radio" id="modeAdd" aria-checked="false">Add a line (existing account)</button>
+          </div>
+
+          <div id="prorationInputs" hidden>
+            <div class="field-grid">
+              <label for="addDate">Date the line is added
+                <input type="date" id="addDate" />
+              </label>
+              <label for="nextBillDate">Customer's next bill date
+                <input type="date" id="nextBillDate" />
+              </label>
+            </div>
+            <p class="hint" style="margin-top:10px;">Mark each line below as <strong>Existing</strong> or <strong>New</strong>. New lines are prorated from the date added to the next bill date.</p>
+          </div>
+
+          <div class="switch-row">
+            <div>
+              <strong id="autopayLabel">AutoPay</strong>
+              <p class="hint">Saves $5/mo per phone line. Turn off to show the non-AutoPay price.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="autopayToggle" checked aria-labelledby="autopayLabel" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <!-- Phone Lines Card -->
+        <section class="card" aria-labelledby="linesHeading">
+          <div class="card-title">
+            <h2 id="linesHeading">Phone Lines</h2>
+            <span id="lineCountBadge" style="font-size: 0.85rem; color: var(--boost-text-muted);">1 of 7 Lines</span>
+          </div>
+
+          <div id="linesContainer"></div>
+
+          <div class="button-group">
+            <button type="button" class="btn btn-primary" id="btnAddLine">+ Add Line</button>
+            <button type="button" class="btn btn-secondary" id="btnReset">Reset</button>
+          </div>
+
+          <label class="promo-toggle" for="promoToggle" id="promoBox" hidden>
+            <input type="checkbox" id="promoToggle" />
+            <span>
+              <strong>6 × $10 Offer</strong> <span class="badge-rpd">RPD Only</span><br/>
+              New customers: $10/mo for the first 6 months on up to 3 lines of the $25 Unlimited (BYOD) plan.
+              <small id="promoHint">Price returns to $25/mo after month 6.</small>
+            </span>
+          </label>
+        </section>
+
+        <!-- Connected Devices Card -->
+        <section class="card" aria-labelledby="devicesHeading">
+          <div class="card-title"><h2 id="devicesHeading">Connected Devices</h2></div>
+
+          <div class="device-row">
+            <div class="device-info">
+              <h3 id="tabletLabel">Tablet (30GB Data) — $20/mo</h3>
+              <p>30GB Premium Data • $20/mo with an active phone line (<span class="reg-price">reg. $65/mo</span>, you save $45/mo)</p>
+            </div>
+            <div class="stepper" role="group" aria-labelledby="tabletLabel">
+              <button type="button" class="stepper-btn" id="tabletMinus" aria-label="Remove one tablet" onclick="updateDevice('tablet', -1)">−</button>
+              <span class="stepper-value" id="tabletQty" aria-live="polite" aria-label="Tablets">0</span>
+              <button type="button" class="stepper-btn" aria-label="Add one tablet" onclick="updateDevice('tablet', 1)">+</button>
+            </div>
+          </div>
+
+          <div class="device-row">
+            <div class="device-info">
+              <h3 id="watchLabel">Watch (2GB) — $10/mo</h3>
+              <p>Unlimited Talk & Text + 2GB Data • $10/mo with an active phone line (<span class="reg-price">reg. $25/mo</span>, you save $15/mo)</p>
+            </div>
+            <div class="stepper" role="group" aria-labelledby="watchLabel">
+              <button type="button" class="stepper-btn" id="watchMinus" aria-label="Remove one watch" onclick="updateDevice('watch', -1)">−</button>
+              <span class="stepper-value" id="watchQty" aria-live="polite" aria-label="Watches">0</span>
+              <button type="button" class="stepper-btn" aria-label="Add one watch" onclick="updateDevice('watch', 1)">+</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Add-ons -->
+        <section class="card" aria-labelledby="addonsHeading">
+          <div class="card-title"><h2 id="addonsHeading">Add-ons & Services</h2></div>
+          <p class="hint"><strong>Boost Protect</strong> is chosen per line above (price is based on the device's MSRP). Use the field below for any other monthly add-on or service.</p>
+          <div class="other-addon">
+            <label for="otherAddonName">Other add-on (name)
+              <input type="text" id="otherAddonName" placeholder="e.g. Entertainment add-on" maxlength="40" />
+            </label>
+            <label for="otherAddonAmount">Monthly price ($)
+              <input type="number" id="otherAddonAmount" min="0" step="0.01" placeholder="0.00" inputmode="decimal" />
+            </label>
+          </div>
+        </section>
+
+        <!-- Plan Specifications Reference -->
+        <details>
+          <summary>View Plan Details & Multi-Line Rules</summary>
+          <div style="margin-top: 10px; line-height: 1.5;">
+            <h4>Plan Comparison</h4>
+            <div class="table-wrap"><table id="planCompareTable"></table></div>
+
+            <h4 style="margin-top: 14px;">Multi-Line Savings Schedule ($50 & $60 Plans Only)</h4>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">Eligible Lines</th><th scope="col">Account Savings</th></tr></thead>
+                <tbody id="discountTableBody"></tbody>
+              </table>
+            </div>
+
+            <h4 style="margin-top: 14px;">Boost Protect (Device Protection)</h4>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">Device MSRP</th><th scope="col">Monthly Fee</th></tr></thead>
+                <tbody id="protectTableBody"></tbody>
+              </table>
+            </div>
+            <p class="hint" style="margin-top:6px;">Covers loss, theft, accidental damage and malfunction. Deductibles apply. Boost Protect with AppleCare Services uses the same monthly fees.</p>
+          </div>
+        </details>
+      </div>
+
+      <!-- RIGHT COLUMN: SUMMARY -->
+      <aside class="summary-col" aria-label="Price summary">
+        <div class="summary-card">
+          <div class="summary-header">Estimated Monthly Total</div>
+          <div class="big-total" id="monthlyTotalDisplay" aria-live="polite">$25.00<span>/mo</span></div>
+          <div class="avg-cost" id="avgCostDisplay">Average: $25.00/phone line</div>
+          <div class="avg-sub">Average is plan cost only (after multi-line savings), before add-ons and connected devices.</div>
+
+          <div class="callout proration" id="prorationBox" hidden aria-live="polite">
+            <div class="pr-title">Adding a line</div>
+            <div id="prorationContent"></div>
+          </div>
+
+          <div class="callout" id="promoCallout" hidden aria-live="polite">
+            First 6 months: <strong class="hl" id="promoTotalDisplay">$10.00/mo</strong> <span class="badge-rpd">RPD Only</span><br/>
+            <span class="muted" id="promoNoteDisplay"></span>
+          </div>
+
+          <div class="callout autopay-on" id="autopayCallout" aria-live="polite"></div>
+
+          <div class="summary-details">
+            <div class="summary-line">
+              <span id="phonePlansLabel">Phone plans (1 line):</span>
+              <span id="phoneSubtotalDisplay">$25.00</span>
+            </div>
+            <div class="summary-line savings">
+              <span>Multi-line savings (<span id="eligibleCountDisplay">0</span> eligible):</span>
+              <span id="discountDisplay">-$0.00</span>
+            </div>
+            <div class="summary-line" id="protectRow" hidden>
+              <span>Boost Protect (<span id="protectCount">0</span>):</span>
+              <span id="protectDisplay">+$0.00</span>
+            </div>
+            <div class="summary-line" id="otherRow" hidden>
+              <span id="otherLabel">Other add-on:</span>
+              <span id="otherDisplay">+$0.00</span>
+            </div>
+            <div class="summary-line" id="deviceSubtotalRow" hidden>
+              <span id="deviceLabel">Connected devices:</span>
+              <span id="deviceSubtotalDisplay">+$0.00</span>
+            </div>
+            <div class="summary-line total">
+              <span>Monthly total:</span>
+              <span id="totalLineDisplay">$25.00</span>
+            </div>
+          </div>
+
+          <div class="disclaimer-box" id="disclaimer">
+            Service estimate only. Taxes, regulatory fees, device financing, and one-time activation fees are not included. Multi-line savings apply only to $50 Unlimited+ and $60 Unlimited Premium lines on the same account. The 6 × $10 offer is RPD only, for new customers, on up to 3 $25 Unlimited lines for the first 6 months. Boost is prepaid: when a line is added, the new line's first month is paid upfront along with a prorated charge for the rest of the current bill cycle. Amounts are estimates; the customer's actual charges may differ.
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    /* ================= CONFIG — update prices & features here ================= */
+
+    const MAX_LINES = 7;            // in-store line limit
+    const AUTOPAY_DISCOUNT = 5;     // $/mo per phone line when AutoPay is on
+
+    // rpdOnly: true adds an "RPD Only" label anywhere the plan or offer is shown.
+    const PLANS = {
+      unlimited25: {
+        label: "$25 Unlimited (BYOD)",
+        short: "$25 Unlimited",
+        price: 25,
+        eligible: false,
+        rpdOnly: false,
+        data: "30GB premium data",
+        dataDetail: "30GB (then 512kbps)",
+        hotspot: false,
+        intl: null,
+        intlDetail: "—",
+        roaming: "—",
+        northAmerica: false,
+        device: "BYOD or buy a phone at SRP",
+        promo: { name: "6 × $10 Offer", price: 10, months: 6, maxLines: 3, rpdOnly: true }
+      },
+      global40: {
+        label: "$40 Global Connection",
+        short: "$40 Global",
+        price: 40,
+        eligible: false,
+        rpdOnly: false,
+        data: "40GB premium data",
+        dataDetail: "40GB (then 512kbps)",
+        hotspot: false,
+        intl: "Global Talk & Text + 1GB roaming",
+        intlDetail: "✓ 190+ destinations",
+        roaming: "1GB Global Roaming data",
+        northAmerica: false,
+        device: "BYOD or buy a phone at SRP"
+      },
+      unlimitedPlus50: {
+        label: "$50 Unlimited+",
+        short: "$50 Unlimited+",
+        price: 50,
+        eligible: true,
+        rpdOnly: false,
+        data: "40GB premium data",
+        dataDetail: "40GB",
+        hotspot: true,
+        intl: "Global Talk & Text",
+        intlDetail: "✓ 190+ destinations",
+        roaming: "—",
+        northAmerica: false,
+        device: "BYOD or deals on select phones"
+      },
+      unlimitedPrem60: {
+        label: "$60 Unlimited Premium",
+        short: "$60 Premium",
+        price: 60,
+        eligible: true,
+        rpdOnly: false,
+        data: "50GB premium data",
+        dataDetail: "50GB",
+        hotspot: true,
+        intl: "Global Talk & Text + North America",
+        intlDetail: "✓ 190+ destinations",
+        roaming: "—",
+        northAmerica: true,
+        device: "BYOD or deals on select phones"
+      }
+    };
+
+    const DEVICE_PRICES = { tablet: 20, watch: 10 };
+
+    // Cumulative account savings by number of eligible ($50/$60) lines, index 0–7.
+    const MULTILINE_DISCOUNTS = [0, 0, 20, 40, 80, 100, 120, 140];
+
+    // Boost Protect monthly fee by device MSRP tier
+    const PROTECT_TIERS = [
+      { fee: 0,  label: "No Boost Protect" },
+      { fee: 8,  label: "$8/mo — device MSRP under $500" },
+      { fee: 12, label: "$12/mo — MSRP $500–$999.99" },
+      { fee: 15, label: "$15/mo — MSRP $1,000–$1,499.99" },
+      { fee: 18, label: "$18/mo — MSRP $1,500–$3,000" }
+    ];
+
+    /* ================= STATE ================= */
+
+    const money = n => `$${n.toFixed(2)}`;
+    const DAY_MS = 86400000;
+    const newLine = (isNew = true) => ({ plan: "unlimited25", protect: 0, isNew });
+
+    const state = {
+      mode: "new",          // "new" | "addline"
+      autopay: true,
+      promoOn: false,
+      lines: [newLine()],
+      tablet: 0,
+      watch: 0,
+      otherName: "",
+      otherAmount: 0
+    };
+
+    /* ================= HELPERS ================= */
+
+    function toInputDate(d) {
+      const p = n => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+    function parseInputDate(s) {
+      if (!s) return null;
+      const [y, m, d] = s.split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return Date.UTC(y, m - 1, d);
+    }
+    function fmtDate(ms) {
+      return new Date(ms).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    }
+    function sameDayPrevMonth(ms) {
+      const d = new Date(ms);
+      let y = d.getUTCFullYear(), m = d.getUTCMonth() - 1;
+      if (m < 0) { m = 11; y--; }
+      const lastDay = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      return Date.UTC(y, m, Math.min(d.getUTCDate(), lastDay));
+    }
+    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+    const rpdBadge = on => on ? ' <span class="badge-rpd">RPD Only</span>' : "";
+
+    function anyPromoPlanSelected() {
+      return state.lines.some(l => PLANS[l.plan].promo);
+    }
+
+    /* ================= PRICING ================= */
+
+    // promoPhase = true → price for months 1–6 (applies the 6 × $10 offer if on)
+    function computeTotals(subset, promoPhase) {
+      const apAdd = state.autopay ? 0 : AUTOPAY_DISCOUNT;
+      let plans = 0, eligible = 0, protect = 0, protectCount = 0;
+      let promoCandidates = 0, promoPerLine = 0, promoMax = 0;
+
+      subset.forEach(l => {
+        const p = PLANS[l.plan];
+        plans += p.price + apAdd;
+        if (p.eligible) eligible++;
+        if (l.protect > 0) { protect += l.protect; protectCount++; }
+        // In add-a-line quotes, the offer only applies to lines being added
+        if (p.promo && (state.mode === "new" || l.isNew)) {
+          promoCandidates++;
+          promoPerLine = p.price - p.promo.price;
+          promoMax = p.promo.maxLines;
+        }
+      });
+
+      const promoLines = (promoPhase && state.promoOn) ? Math.min(promoCandidates, promoMax) : 0;
+      const promoSavings = promoLines * promoPerLine;
+      const multi = MULTILINE_DISCOUNTS[Math.min(eligible, MAX_LINES)] || 0;
+      const hasLines = subset.length > 0;
+      const devices = hasLines ? state.tablet * DEVICE_PRICES.tablet + state.watch * DEVICE_PRICES.watch : 0;
+      const other = hasLines ? state.otherAmount : 0;
+      const total = plans - multi - promoSavings + protect + devices + other;
+
+      return {
+        count: subset.length, plans, eligible, multi, protect, protectCount,
+        promoCandidates, promoLines, promoSavings, devices, other, total,
+        autopaySavings: subset.length * AUTOPAY_DISCOUNT
+      };
+    }
+
+    /* ================= RENDER ================= */
+
+    function chip(cls, text) { return `<span class="chip ${cls}">${text}</span>`; }
+
+    function renderLines() {
+      const container = document.getElementById("linesContainer");
+      container.innerHTML = "";
+      const addMode = state.mode === "addline";
+
+      state.lines.forEach((line, i) => {
+        const plan = PLANS[line.plan];
+        const row = document.createElement("div");
+        row.className = "line-row" + (addMode && line.isNew ? " is-new" : "");
+
+        const planOptions = Object.entries(PLANS).map(([key, p]) =>
+          `<option value="${key}" ${key === line.plan ? "selected" : ""}>${p.label}${p.eligible ? " — Multi-line eligible" : ""}${p.rpdOnly ? " (RPD Only)" : ""}</option>`
+        ).join("");
+
+        const protectOptions = PROTECT_TIERS.map(t =>
+          `<option value="${t.fee}" ${t.fee === line.protect ? "selected" : ""}>${t.label}</option>`
+        ).join("");
+
+        const chips = [
+          chip("", plan.data),
+          plan.hotspot ? chip("yes", "✓ Hotspot") : chip("no", "✕ No hotspot"),
+          plan.intl ? chip("yes", "✓ " + plan.intl) : chip("no", "✕ No international"),
+          chip("device", "Device: " + plan.device),
+          plan.eligible ? chip("multi", "Multi-line savings") : ""
+        ].join("");
+
+        row.innerHTML = `
+          <div class="line-header">
+            <label class="line-label" for="plan${i}">Line ${i + 1}${addMode && line.isNew ? '<span class="badge-new">New</span>' : ""}${rpdBadge(plan.rpdOnly)}</label>
+            <div class="line-header-right">
+              ${addMode ? `
+                <select class="mini-select" id="status${i}" aria-label="Line ${i + 1} status" onchange="setLineStatus(${i}, this.value)">
+                  <option value="existing" ${!line.isNew ? "selected" : ""}>Existing line</option>
+                  <option value="new" ${line.isNew ? "selected" : ""}>New line</option>
+                </select>` : ""}
+              ${state.lines.length > 1 ? `<button type="button" class="btn-delete" aria-label="Remove line ${i + 1}" onclick="removeLine(${i})">Remove</button>` : ""}
+            </div>
+          </div>
+          <select id="plan${i}" onchange="changePlan(${i}, this.value)">${planOptions}</select>
+          <div class="chips">${chips}</div>
+          <div class="addon-row">
+            <label for="protect${i}">Boost Protect</label>
+            <select class="mini-select" id="protect${i}" onchange="setProtect(${i}, this.value)">${protectOptions}</select>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      document.getElementById("lineCountBadge").innerText = `${state.lines.length} of ${MAX_LINES} Lines`;
+      document.getElementById("btnAddLine").disabled = state.lines.length >= MAX_LINES;
+
+      // Only show the 6 × $10 offer when a $25 Unlimited (BYOD) line is selected
+      const promoBox = document.getElementById("promoBox");
+      const showPromo = anyPromoPlanSelected();
+      promoBox.hidden = !showPromo;
+      if (!showPromo) {
+        state.promoOn = false;
+        document.getElementById("promoToggle").checked = false;
+      }
+      document.getElementById("promoHint").innerText = addMode
+        ? "Add-a-line quotes: applies only to $25 Unlimited lines marked New. Price returns to $25/mo after month 6."
+        : "Price returns to $25/mo after month 6.";
+
+      recalculate();
+    }
+
+    function renderStaticTables() {
+      const keys = Object.keys(PLANS);
+      const rows = [
+        ["Price with AutoPay", k => money(PLANS[k].price) + "/mo"],
+        ["Without AutoPay", k => money(PLANS[k].price + AUTOPAY_DISCOUNT) + "/mo"],
+        ["Premium data", k => PLANS[k].dataDetail],
+        ["Hotspot", k => PLANS[k].hotspot ? "✓ Included (uses plan data)" : "—"],
+        ["Global Talk & Text", k => PLANS[k].intlDetail],
+        ["Global Roaming data", k => PLANS[k].roaming],
+        ["North America Connect", k => PLANS[k].northAmerica ? "✓" : "—"],
+        ["Device options", k => PLANS[k].device],
+        ["Multi-line savings", k => PLANS[k].eligible ? "✓ Eligible" : "Not eligible"],
+        ["Offers", k => PLANS[k].promo
+          ? `${PLANS[k].promo.name}${rpdBadge(PLANS[k].promo.rpdOnly)}<br/>New customers, up to ${PLANS[k].promo.maxLines} lines, first ${PLANS[k].promo.months} months`
+          : "—"]
+      ];
+      document.getElementById("planCompareTable").innerHTML =
+        `<thead><tr><th scope="col"></th>${keys.map(k => `<th scope="col">${PLANS[k].short}${rpdBadge(PLANS[k].rpdOnly)}</th>`).join("")}</tr></thead>` +
+        `<tbody>${rows.map(([label, fn]) => `<tr><th scope="row">${label}</th>${keys.map(k => `<td>${fn(k)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+
+      document.getElementById("discountTableBody").innerHTML = MULTILINE_DISCOUNTS.slice(1)
+        .map((d, i) => `<tr><td>${plural(i + 1, "Line")}</td><td>${d ? "-" + money(d).replace(".00", "") : "$0"}/mo</td></tr>`).join("");
+
+      document.getElementById("protectTableBody").innerHTML = PROTECT_TIERS.slice(1)
+        .map(t => `<tr><td>${t.label.split("— ")[1].replace("device MSRP ", "").replace("MSRP ", "")}</td><td>${money(t.fee)}/mo</td></tr>`).join("");
+    }
+
+    /* ================= ACTIONS ================= */
+
+    function addLine() {
+      if (state.lines.length < MAX_LINES) {
+        state.lines.push(newLine(true));
+        renderLines();
+      }
+    }
+
+    function removeLine(index) {
+      if (state.lines.length > 1) {
+        state.lines.splice(index, 1);
+        renderLines();
+      }
+    }
+
+    function changePlan(index, key) {
+      state.lines[index].plan = key;
+      renderLines();
+      const el = document.getElementById(`plan${index}`);
+      if (el) el.focus();
+    }
+
+    function setProtect(index, fee) {
+      state.lines[index].protect = Number(fee) || 0;
+      recalculate();
+    }
+
+    function setLineStatus(index, value) {
+      state.lines[index].isNew = value === "new";
+      renderLines();
+      const el = document.getElementById(`status${index}`);
+      if (el) el.focus();
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      document.getElementById("modeNew").setAttribute("aria-checked", mode === "new");
+      document.getElementById("modeAdd").setAttribute("aria-checked", mode === "addline");
+      document.getElementById("prorationInputs").hidden = mode !== "addline";
+      if (mode === "addline") {
+        // Default: first line is existing, any others are new
+        if (!state.lines.some(l => !l.isNew)) state.lines[0].isNew = false;
+        if (state.lines.length === 1) state.lines.push(newLine(true));
+      } else {
+        state.lines.forEach(l => { l.isNew = true; });
+      }
+      renderLines();
+    }
+
+    function updateDevice(type, delta) {
+      if (type === "tablet") state.tablet = Math.max(0, state.tablet + delta);
+      if (type === "watch") state.watch = Math.max(0, state.watch + delta);
+      recalculate();
+    }
+
+    function setDefaultDates() {
+      const today = new Date();
+      const next = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 15);
+      document.getElementById("addDate").value = toInputDate(today);
+      document.getElementById("nextBillDate").value = toInputDate(next);
+    }
+
+    function resetCalculator() {
+      state.mode = "new";
+      state.autopay = true;
+      state.promoOn = false;
+      state.lines = [newLine()];
+      state.tablet = 0;
+      state.watch = 0;
+      state.otherName = "";
+      state.otherAmount = 0;
+      document.getElementById("autopayToggle").checked = true;
+      document.getElementById("promoToggle").checked = false;
+      document.getElementById("otherAddonName").value = "";
+      document.getElementById("otherAddonAmount").value = "";
+      setDefaultDates();
+      setMode("new");
+    }
+
+    /* ================= RECALCULATE ================= */
+
+    function recalculate() {
+      const all = state.lines;
+      const regular = computeTotals(all, false);   // month 7+ / ongoing
+      const intro = computeTotals(all, true);      // months 1–6
+
+      // Device steppers
+      document.getElementById("tabletQty").innerText = state.tablet;
+      document.getElementById("watchQty").innerText = state.watch;
+      document.getElementById("tabletMinus").disabled = state.tablet === 0;
+      document.getElementById("watchMinus").disabled = state.watch === 0;
+
+      // AutoPay banner + callout
+      const banner = document.getElementById("autopayBanner");
+      banner.innerText = state.autopay ? "Prices shown with AutoPay" : `AutoPay OFF — +$${AUTOPAY_DISCOUNT}/mo per line`;
+      banner.classList.toggle("off", !state.autopay);
+
+      const apBox = document.getElementById("autopayCallout");
+      apBox.className = "callout " + (state.autopay ? "autopay-on" : "autopay-off");
+      apBox.innerHTML = state.autopay
+        ? `AutoPay is saving this customer <span class="hl-green">${money(regular.autopaySavings)}/mo</span> (${money(regular.autopaySavings * 12)}/yr). Without AutoPay: ${money(regular.total + regular.autopaySavings)}/mo.`
+        : `AutoPay is off. Turning it on saves <span class="hl-red">${money(regular.autopaySavings)}/mo</span> (${money(regular.autopaySavings * 12)}/yr) — ${money(regular.total - regular.autopaySavings)}/mo with AutoPay.`;
+
+      // Summary lines
+      document.getElementById("phonePlansLabel").innerText =
+        `Phone plans (${plural(regular.count, "line")}${state.autopay ? ", AutoPay" : ", no AutoPay"}):`;
+      document.getElementById("phoneSubtotalDisplay").innerText = money(regular.plans);
+      document.getElementById("eligibleCountDisplay").innerText = regular.eligible;
+      document.getElementById("discountDisplay").innerText = `-${money(regular.multi)}`;
+
+      document.getElementById("protectRow").hidden = regular.protect === 0;
+      document.getElementById("protectCount").innerText = plural(regular.protectCount, "line");
+      document.getElementById("protectDisplay").innerText = `+${money(regular.protect)}`;
+
+      document.getElementById("otherRow").hidden = regular.other === 0;
+      document.getElementById("otherLabel").innerText = `${state.otherName.trim() || "Other add-on"}:`;
+      document.getElementById("otherDisplay").innerText = `+${money(regular.other)}`;
+
+      const devParts = [];
+      if (state.tablet) devParts.push(plural(state.tablet, "tablet"));
+      if (state.watch) devParts.push(plural(state.watch, "watch").replace("watchs", "watches"));
+      document.getElementById("deviceSubtotalRow").hidden = regular.devices === 0;
+      document.getElementById("deviceLabel").innerText = `Connected devices (${devParts.join(", ")}):`;
+      document.getElementById("deviceSubtotalDisplay").innerText = `+${money(regular.devices)}`;
+
+      document.getElementById("totalLineDisplay").innerText = money(regular.total);
+      document.getElementById("monthlyTotalDisplay").innerHTML = `${money(regular.total)}<span>/mo</span>`;
+
+      const avg = (regular.plans - regular.multi) / regular.count;
+      document.getElementById("avgCostDisplay").innerText = `Average: ${money(avg)}/phone line`;
+
+      // 6 × $10 offer callout
+      const promoCallout = document.getElementById("promoCallout");
+      if (state.promoOn && intro.promoSavings > 0) {
+        const over = intro.promoCandidates - intro.promoLines;
+        promoCallout.hidden = false;
+        document.getElementById("promoTotalDisplay").innerText = `${money(intro.total)}/mo`;
+        document.getElementById("promoNoteDisplay").innerText =
+          `$10/mo on ${intro.promoLines} of ${plural(intro.promoCandidates, "qualifying $25 line")}` +
+          (over > 0 ? ` (limit 3; ${over} stay${over === 1 ? "s" : ""} at $25)` : "") +
+          `. Saves ${money(intro.promoSavings)}/mo. Then ${money(regular.total)}/mo from month 7.`;
+      } else if (state.promoOn) {
+        promoCallout.hidden = false;
+        document.getElementById("promoTotalDisplay").innerText = `${money(regular.total)}/mo`;
+        document.getElementById("promoNoteDisplay").innerText = state.mode === "addline"
+          ? "No new $25 Unlimited lines in this quote, so the offer doesn't apply."
+          : "No $25 Unlimited lines selected, so the offer doesn't apply.";
+      } else {
+        promoCallout.hidden = true;
+      }
+
+      renderProration(regular, intro);
+    }
+
+    function renderProration(regular, intro) {
+      const box = document.getElementById("prorationBox");
+      const out = document.getElementById("prorationContent");
+      if (state.mode !== "addline") { box.hidden = true; return; }
+      box.hidden = false;
+
+      const existing = state.lines.filter(l => !l.isNew);
+      const added = state.lines.filter(l => l.isNew);
+      if (added.length === 0) {
+        out.innerHTML = `<p class="pr-warn">Mark at least one line as <strong>New</strong> to see what's due today.</p>`;
+        return;
+      }
+      if (existing.length === 0) {
+        out.innerHTML = `<p class="pr-warn">All lines are marked New. Mark the customer's current line(s) as <strong>Existing</strong>, or switch to a New account quote.</p>`;
+        return;
+      }
+
+      const addMs = parseInputDate(document.getElementById("addDate").value);
+      const nextMs = parseInputDate(document.getElementById("nextBillDate").value);
+      if (addMs === null || nextMs === null) {
+        out.innerHTML = `<p class="pr-warn">Enter the date the line is added and the customer's next bill date.</p>`;
+        return;
+      }
+      const cycleStart = sameDayPrevMonth(nextMs);
+      const cycleDays = Math.round((nextMs - cycleStart) / DAY_MS);
+      const daysLeft = Math.round((nextMs - addMs) / DAY_MS);
+      if (addMs >= nextMs || addMs < cycleStart) {
+        out.innerHTML = `<p class="pr-warn">The date added must fall in the current bill cycle (${fmtDate(cycleStart)} – ${fmtDate(nextMs)}), before the next bill date.</p>`;
+        return;
+      }
+
+      // Monthly cost the new line(s) add to the account (incl. change in multi-line savings, Protect, offer)
+      const withNew = state.promoOn ? intro.total : regular.total;
+      const before = computeTotals(existing, false).total;
+      const addedMonthly = Math.max(0, withNew - before);
+
+      // Boost is prepaid: the new line(s)' first month is paid upfront,
+      // plus a prorated charge for the days left in the current bill cycle.
+      const round2 = n => Math.round(n * 100) / 100;
+      const upfront = round2(addedMonthly);
+      const prorated = round2(addedMonthly * daysLeft / cycleDays);
+      const dueToday = upfront + prorated;
+
+      const goingForward = (state.promoOn && intro.promoSavings > 0)
+        ? `${money(intro.total)}/mo <span class="muted" style="font-size:0.8rem;font-weight:400;">months 1–6, then ${money(regular.total)}/mo</span>`
+        : `${money(regular.total)}/mo`;
+
+      out.innerHTML = `
+        <div class="pr-row"><span>First month upfront</span><span>${money(upfront)}</span></div>
+        <div class="pr-note">Prepaid monthly charge for ${plural(added.length, "new line")}, paid in advance.</div>
+        <div class="pr-row"><span>Prorated charge</span><span>${money(prorated)}</span></div>
+        <div class="pr-note">${money(addedMonthly)}/mo × ${daysLeft} of ${cycleDays} days left in the current cycle (until ${fmtDate(nextMs)}).</div>
+        <div class="pr-row due"><span>Due today</span><strong>${money(dueToday)}</strong></div>
+        <div class="pr-note">Before taxes and activation fees.</div>
+        <div class="pr-row"><span>Monthly bill going forward</span><strong>${goingForward}</strong></div>
+        <div class="pr-note">Was ${money(before)}/mo with ${plural(existing.length, "existing line")}. Starts with the ${fmtDate(nextMs)} bill.</div>
+      `;
+    }
+
+    /* ================= WIRE UP ================= */
+
+    document.getElementById("btnAddLine").addEventListener("click", addLine);
+    document.getElementById("btnReset").addEventListener("click", resetCalculator);
+    document.getElementById("modeNew").addEventListener("click", () => setMode("new"));
+    document.getElementById("modeAdd").addEventListener("click", () => setMode("addline"));
+    document.getElementById("autopayToggle").addEventListener("change", e => { state.autopay = e.target.checked; recalculate(); });
+    document.getElementById("promoToggle").addEventListener("change", e => { state.promoOn = e.target.checked; recalculate(); });
+    document.getElementById("addDate").addEventListener("change", recalculate);
+    document.getElementById("nextBillDate").addEventListener("change", recalculate);
+    document.getElementById("otherAddonName").addEventListener("input", e => { state.otherName = e.target.value; recalculate(); });
+    document.getElementById("otherAddonAmount").addEventListener("input", e => {
+      const v = parseFloat(e.target.value);
+      state.otherAmount = isFinite(v) && v > 0 ? Math.round(v * 100) / 100 : 0;
+      recalculate();
+    });
+
+    // Initial render
+    setDefaultDates();
+    renderStaticTables();
+    renderLines();
+  </script>
+</body>
+</html>
