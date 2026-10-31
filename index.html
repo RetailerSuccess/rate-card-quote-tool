@@ -309,8 +309,9 @@
     .summary-header { font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; color: #9ca3af; margin-bottom: 8px; }
     .big-total { font-size: 2.8rem; font-weight: 800; color: #ffffff; margin-bottom: 4px; }
     .big-total span { font-size: 1.1rem; font-weight: 400; color: #9ca3af; }
-    .avg-cost { font-size: 0.9rem; color: var(--boost-orange); font-weight: 600; margin-bottom: 2px; }
-    .avg-sub { font-size: 0.78rem; color: #9ca3af; margin-bottom: 16px; }
+    .avg-cost { font-size: 0.9rem; color: var(--boost-orange); font-weight: 600; margin-bottom: 16px; }
+    .avg-sub { font-size: 0.78rem; color: #9ca3af; margin: -14px 0 16px; }
+    .avg-sub[hidden] { display: none; }
 
     .callout {
       background: #1c1c1c;
@@ -516,8 +517,8 @@
         <div class="summary-card">
           <div class="summary-header">Estimated Monthly Total</div>
           <div class="big-total" id="monthlyTotalDisplay" aria-live="polite">$25.00<span>/mo</span></div>
-          <div class="avg-cost" id="avgCostDisplay">Average: $25.00/phone line</div>
-          <div class="avg-sub">Average is plan cost only (after multi-line savings), before add-ons and connected devices.</div>
+          <div class="avg-cost" id="avgCostDisplay">Average plan cost: $25.00/phone line</div>
+          <div class="avg-sub" id="avgSubDisplay" hidden></div>
 
           <div class="callout proration" id="prorationBox" hidden aria-live="polite">
             <div class="pr-title">Adding a line</div>
@@ -960,7 +961,19 @@
       document.getElementById("monthlyTotalDisplay").innerHTML = `${money(regular.total)}<span>/mo</span>`;
 
       const avg = (regular.plans - regular.multi) / regular.count;
-      document.getElementById("avgCostDisplay").innerText = `Average: ${money(avg)}/phone line`;
+      document.getElementById("avgCostDisplay").innerText = `Average plan cost: ${money(avg)}/phone line`;
+
+      // Note under the average: only shown when extras are on the quote, and confirms they ARE in the total
+      const extras = [];
+      if (regular.protect > 0) extras.push("Boost Protect");
+      if (regular.other > 0) extras.push(state.otherName.trim() || "add-ons");
+      if (regular.devices > 0) extras.push("connected devices");
+      const extrasTotal = regular.protect + regular.other + regular.devices;
+      const avgSub = document.getElementById("avgSubDisplay");
+      avgSub.hidden = extras.length === 0;
+      avgSub.innerText = extras.length
+        ? `Monthly total includes ${extras.length > 1 ? extras.slice(0, -1).join(", ") + " and " + extras[extras.length - 1] : extras[0]} (+${money(extrasTotal)}).`
+        : "";
 
       // 6 × $10 offer callout
       const promoCallout = document.getElementById("promoCallout");
@@ -1040,7 +1053,7 @@
         <div class="pr-row due"><span>Due today</span><strong>${money(dueToday)}</strong></div>
         <div class="pr-note">Before taxes and activation fees.</div>
         <div class="pr-row"><span>Monthly bill going forward</span><strong>${goingForward}</strong></div>
-        <div class="pr-note">Was ${money(before)}/mo with ${plural(existing.length, "existing line")}. Starts with the ${fmtDate(nextMs)} bill.</div>
+        <div class="pr-note">Was ${money(before)}/mo with ${plural(existing.length, "existing line")}${(state.tablet || state.watch) ? " + connected devices" : ""}. Starts with the ${fmtDate(nextMs)} bill.</div>
       `;
     }
 
