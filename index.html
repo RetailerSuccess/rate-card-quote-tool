@@ -158,6 +158,13 @@ button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visi
 .summary-line{display:flex;justify-content:space-between;gap:12px}
 .summary-line[hidden]{display:none}
 .summary-line.savings{color:var(--yellow);font-weight:700}
+.line-breakdown{display:flex;flex-direction:column;gap:7px;margin:-3px 0 2px 2px;padding-left:12px;border-left:2px solid var(--on-dark-line)}
+.line-breakdown[hidden]{display:none}
+.lb-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;color:var(--on-dark-muted)}
+.lb-row .lb-name strong{color:#fff;font-weight:700}
+.lb-row .lb-price{color:#fff;white-space:nowrap}
+.lb-note{display:block;font-size:12px;color:var(--on-dark-muted);margin-top:1px}
+.lb-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--orange);color:#fff;padding:1px 6px;border-radius:999px;margin-left:4px;vertical-align:middle}
 .summary-line.total{border-top:1px solid var(--on-dark-line);padding-top:9px;font-weight:700;font-size:16px}
 .disclaimer-box{font-size:12px;color:var(--on-dark-muted);line-height:1.45}
 
@@ -357,6 +364,7 @@ tbody th{white-space:nowrap}
               <span id="phonePlansLabel">Phone plans (1 line):</span>
               <span id="phoneSubtotalDisplay">$25.00</span>
             </div>
+            <div class="line-breakdown" id="lineBreakdown" hidden aria-label="Rate plan by line"></div>
             <div class="summary-line savings">
               <span>Multi-line savings (<span id="eligibleCountDisplay">0</span> eligible):</span>
               <span id="discountDisplay">-$0.00</span>
@@ -766,6 +774,7 @@ tbody th{white-space:nowrap}
       document.getElementById("phonePlansLabel").innerText =
         `Phone plans (${plural(regular.count, "line")}${state.autopay ? ", AutoPay" : ", no AutoPay"}):`;
       document.getElementById("phoneSubtotalDisplay").innerText = money(regular.plans);
+      renderLineBreakdown();
       document.getElementById("eligibleCountDisplay").innerText = regular.eligible;
       document.getElementById("discountDisplay").innerText = `-${money(regular.multi)}`;
 
@@ -823,6 +832,38 @@ tbody th{white-space:nowrap}
       }
 
       renderProration(regular, intro);
+    }
+
+    // Rate plan for each line (shown when there's more than one line)
+    function renderLineBreakdown() {
+      const box = document.getElementById("lineBreakdown");
+      if (state.lines.length < 2) { box.hidden = true; box.innerHTML = ""; return; }
+      const apAdd = state.autopay ? 0 : AUTOPAY_DISCOUNT;
+
+      // Which lines get the 6 x $10 offer (first qualifying lines, up to the limit)
+      const promoIdx = new Set();
+      if (state.promoOn) {
+        let used = 0;
+        state.lines.forEach((l, i) => {
+          const pr = PLANS[l.plan].promo;
+          if (pr && (state.mode === "new" || l.isNew) && used < pr.maxLines) { promoIdx.add(i); used++; }
+        });
+      }
+
+      box.hidden = false;
+      box.innerHTML = state.lines.map((l, i) => {
+        const p = PLANS[l.plan];
+        const name = p.label.replace(/^\$\d+\s+/, "");   // e.g. "Unlimited+" (price is shown on the right)
+        const notes = [];
+        if (p.eligible) notes.push("Multi-line eligible");
+        if (promoIdx.has(i)) notes.push(`6 × $10: ${money(p.promo.price + apAdd)}/mo first ${p.promo.months} months`);
+        if (l.protect > 0) notes.push(`Boost Protect ${money(l.protect)}/mo (listed below)`);
+        const tag = (state.mode === "addline" && l.isNew) ? '<span class="lb-tag">New</span>' : "";
+        return `<div class="lb-row">
+            <span class="lb-name"><strong>Line ${i + 1}</strong> · ${name}${tag}${notes.length ? `<span class="lb-note">${notes.join(" · ")}</span>` : ""}</span>
+            <span class="lb-price">${money(p.price + apAdd)}</span>
+          </div>`;
+      }).join("");
     }
 
     function renderProration(regular, intro) {

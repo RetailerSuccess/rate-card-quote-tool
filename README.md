@@ -11,6 +11,7 @@ A single-page quote tool that estimates the monthly cost of a Boost Mobile accou
 - Boost Protect per line ($8 / $12 / $15 / $18 by device MSRP), plus a field for any other monthly add-on
 - Connected devices: tablet ($20/mo) and watch ($10/mo) with an active phone line
 - Add-a-line mode: amount due today (first month upfront + prorated charge) and the monthly bill going forward. Tablets and watches added the same day are charged the same way
+- Line-by-line rate plan breakdown in the summary when there's more than one line
 - Responsive layout, keyboard and screen-reader friendly
 
 ## Run it
